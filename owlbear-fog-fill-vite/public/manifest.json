@@ -1,12 +1,6 @@
 {
-    "name": "Hello, World!",
-    "version": "1.0.0",
-    "manifest_version": 1,
-    "action": {
-      "title": "Hello, World!",
-      "icon": "/icon.svg",
-      "popover": "/",
-      "height": 600,
-      "width": 400
-    }
-  }
+  "name": "Fog Fill",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "background_url": "/"
+}
