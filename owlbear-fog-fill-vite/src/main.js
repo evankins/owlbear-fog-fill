@@ -1,9 +1,12 @@
-import OBR, { buildWall, buildCurve } from "@owlbear-rodeo/sdk";
+import OBR, { buildCurve } from "@owlbear-rodeo/sdk";
+import { imageToImageData } from './imageToImageData';
+import { floodFillToPolygon } from './floodFillToPolygon';
 
 const ID = "com.evankinsey.fog-fill";
 
 // subscribe to scene changes to clear the local copy of scene?
 let scene;
+let imageData;
 
 function createMode() {
   OBR.tool.createMode({
@@ -20,7 +23,8 @@ function createMode() {
     ],
     async onToolClick(context, event) {
       // Get the position of the pointer
-      const pointerPos = event.pointerPosition;
+      const pointerPos = 
+        {x: event.pointerPosition.x / 3, y: event.pointerPosition.y / 3}
 
       // Relate that position to a point on the map
       //    - Prompt user for map if not given
@@ -28,12 +32,15 @@ function createMode() {
       if (!scene)
       {
         scene = await OBR.assets.downloadScenes(false);
+        imageData = await imageToImageData(scene[0].items[0].image.url);
       }
       console.log('scene --->', scene);
+      console.log('imageData --->', imageData);
+      
 
       const imageSize = {
-        x: scene[0].items[0].image.width * 3,
-        y: scene[0].items[0].image.height * 3
+        x: scene[0].items[0].image.width,
+        y: scene[0].items[0].image.height
       };
 
       
@@ -61,21 +68,32 @@ function createMode() {
 
       // Run a fill algorithm that returns an array of points to 
       // create a polygon
-
-      // Create an owlbear rodeo fog polygon 
+      const rings = floodFillToPolygon(imageData, pointerPos.x, pointerPos.y);
+      console.log("Final rings: ", rings)
       
-      const fog = buildCurve()
-      .points([
-        { x: pointerPos.x, y: pointerPos.y },
-        { x: 150, y: 0 },
-        { x: 150, y: 150 },
-      ])
-      .tension(0)
-      .layer("FOG")
-      .build();
+      // Create an owlbear rodeo fog polygon 
+      let items = [];
+      rings.map(ring => {
+        // Ignore rings with size of 2
+        if (ring.length <= 2) {
+          return;
+        }
+        
+        let fog = buildCurve()
+        .points(
+          ring
+        )
+        .tension(0)
+        .layer("FOG")
+        .scale({x: 3, y:3})
+        .build();
+        items.push(fog);
+      });
 
       // Place that fog onto the map
-      OBR.scene.items.addItems([fog]);
+      for (let i = 0; i < items.length; i += 2) {
+        await OBR.scene.items.addItems(items.slice(i, i + 2)); // ✅ GOOD
+      }
     }
   });
 }
