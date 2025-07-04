@@ -1,6 +1,6 @@
 import OBR, { buildCurve } from "@owlbear-rodeo/sdk";
 import { imageToImageData } from './imageToImageData';
-import { floodFillToPolygon } from './floodFillToPolygon';
+import { floodFillToPolygon as floodFillToPolygons } from './floodFillToPolygon';
 
 const ID = "com.evankinsey.fog-fill";
 
@@ -68,31 +68,17 @@ function createMode() {
 
       // Run a fill algorithm that returns an array of points to 
       // create a polygon
-      const rings = floodFillToPolygon(imageData, pointerPos.x, pointerPos.y);
-      console.log("Final rings: ", rings)
+      const polygons = floodFillToPolygons(imageData, pointerPos.x, pointerPos.y);
+      console.log("Final polygons: ", polygons)
       
       // Create an owlbear rodeo fog polygon 
-      let items = [];
-      rings.map(ring => {
-        // Ignore rings with size of 2
-        if (ring.length <= 2) {
-          return;
-        }
-        
-        let fog = buildCurve()
-        .points(
-          ring
-        )
-        .tension(0)
-        .layer("FOG")
-        .scale({x: 3, y:3})
-        .build();
-        items.push(fog);
-      });
 
       // Place that fog onto the map
-      for (let i = 0; i < items.length; i += 2) {
-        await OBR.scene.items.addItems(items.slice(i, i + 2)); // ✅ GOOD
+      for (let i = 0; i < polygons.length; i += 1) {
+        console.log("Adding item", i);
+        await OBR.scene.items.addItems(polygons.slice(i, i + 1));
+        console.log("Waiting 1 second");
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
   });
